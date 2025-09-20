@@ -1,6 +1,6 @@
 {
   "name": "Shelly WIFIKonfigurator",
-  "version": "0.2c.0",
+  "version": "0.2.0",
   "slug": "shelly_wifikonfigurator",
   "description": "Konfigurieren Sie Shelly-Geräte über den Hotspot",
   "arch": [
