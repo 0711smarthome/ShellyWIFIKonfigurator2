@@ -1,0 +1,35 @@
+{
+  "name": "Shelly WiFi Konfigurator",
+  "version": "0.1.0",
+  "slug": "shelly_wifikonfigurator",
+  "description": "Konfiguriert Shelly-Geräte über ihren AP mit Ihren WLAN-Zugangsdaten.",
+  "url": "https://github.com/0711smarthome/ShellyWIFIKonfigurator2",
+  "arch": [
+    "aarch64",
+    "amd64",
+    "armhf",
+    "armv7"
+  ],
+  "init": false,
+  "options": {
+    "your_wifi_ssid": "",
+    "your_wifi_password": ""
+  },
+  "schema": {
+    "your_wifi_ssid": "str",
+    "your_wifi_password": "str"
+  },
+  "startup": "once",
+  "boot": "manual",
+  "image": "ghcr.io/0711smarthome/shelly-wifikonfigurator2-{arch}",
+  "host_network": true,
+  "hassio_api": true,
+  "privileged": [
+    "NET_ADMIN",
+    "IPC_LOCK"
+  ],
+  "host_pid": true,
+  "build": {
+    "secrets": ["ghcr-token"]
+  }
+}
