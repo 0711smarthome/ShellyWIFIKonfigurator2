@@ -1,3 +1,2 @@
-#!/usr/bin/env bash
-
-python shelly_configurator.py
+#!/bin/bash
+python3 /data/shelly_configurator.py

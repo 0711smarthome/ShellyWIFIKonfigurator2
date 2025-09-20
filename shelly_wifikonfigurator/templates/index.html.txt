@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shelly Massen-Konfigurator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .container { max-width: 700px; margin: auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #333; }
+        .device-card { border: 1px solid #e0e0e0; padding: 15px; margin: 10px 0; border-radius: 5px; background-color: #fafafa; display: flex; align-items: center; }
+        .device-card input[type="checkbox"] { margin-right: 15px; transform: scale(1.5); }
+        input[type="text"], input[type="password"], button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        #message { margin-top: 15px; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #cfe2ff; color: #052c65; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shelly WLAN-Massen-Konfigurator</h1>
+        <p>Dieses Tool hilft Ihnen, mehrere Shelly-Geräte gleichzeitig zu konfigurieren.</p>
+
+        <h2>1. Geräte scannen</h2>
+        <button onclick="scanDevices()">Nach Geräten im Hotspot-Modus suchen</button>
+        <div id="device-list"></div>
+
+        <hr>
+
+        <h2>2. WLAN-Einstellungen eingeben</h2>
+        <form id="config-form">
+            <input type="text" id="wifi-ssid" placeholder="Ihr WLAN-Name (SSID)" required>
+            <input type="password" id="wifi-password" placeholder="Ihr WLAN-Passwort" required>
+            <button type="submit">Ausgewählte Geräte konfigurieren</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('config-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const checkboxes = document.querySelectorAll('input[name="device"]:checked');
+            if (checkboxes.length === 0) {
+                showMessage('Bitte wählen Sie mindestens ein Gerät aus.', 'error');
+                return;
+            }
+
+            const ips = Array.from(checkboxes).map(cb => cb.value);
+            const ssid = document.getElementById('wifi-ssid').value;
+            const password = document.getElementById('wifi-password').value;
+
+            configureDevices(ips, ssid, password);
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+        }
+
+        function scanDevices() {
+            const deviceList = document.getElementById('device-list');
+            deviceList.innerHTML = '<div class="info">Geräte werden gesucht...</div>';
+            
+            fetch('/api/scan')
+                .then(response => response.json())
+                .then(devices => {
+                    deviceList.innerHTML = '';
+                    if (devices.length === 0) {
+                        deviceList.textContent = 'Keine Geräte im Hotspot-Modus gefunden.';
+                    } else {
+                        devices.forEach(device => {
+                            const card = document.createElement('div');
+                            card.className = 'device-card';
+                            card.innerHTML = `
+                                <input type="checkbox" name="device" value="${device.ip}">
+                                <div>
+                                    <strong>${device.name || 'Unbekanntes Gerät'}</strong><br>
+                                    IP: ${device.ip}<br>
+                                    Status: ${device.status || 'Unbekannt'}
+                                </div>
+                            `;
+                            deviceList.appendChild(card);
+                        });
+                    }
+                })
+                .catch(error => {
+                    showMessage('Fehler beim Scannen.', 'error');
+                    console.error('Error:', error);
+                });
+        }
+
+        async function configureDevices(ips, ssid, password) {
+            showMessage('Konfiguriere Geräte...', 'info');
+            
+            let successCount = 0;
+            let errorMessages = [];
+
+            for (const ip of ips) {
+                try {
+                    const response = await fetch('/api/configure', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ ip, ssid, password }),
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorMessages.push(result.message);
+                    }
+                } catch (error) {
+                    errorMessages.push(`Ein Fehler ist bei ${ip} aufgetreten.`);
+                    console.error('Error:', error);
+                }
+            }
+
+            if (errorMessages.length === 0) {
+                showMessage(`Erfolgreich ${successCount} Gerät(e) konfiguriert.`, 'success');
+            } else {
+                showMessage(`Konfiguration abgeschlossen. ${successCount} erfolgreich, ${errorMessages.length} Fehler.`, 'error');
+                console.error('Fehlermeldungen:', errorMessages);
+            }
+        }
+    </script>
+</body>
+</html>

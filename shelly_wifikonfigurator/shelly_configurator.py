@@ -1,36 +1,62 @@
 import os
 import requests
-import time
+import json
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+from time import sleep
 
-WIFI_SSID = os.environ.get('your_wifi_ssid')
-WIFI_PASSWORD = os.environ.get('your_wifi_password')
+app = Flask(__name__)
 
-# Shelly API Endpunkt für die WLAN-Konfiguration
-SHELLY_CONFIG_URL = "http://192.168.33.1/settings/sta"
+# Diese Funktionen müssen Sie mit Ihrer Shelly-Logik füllen
+def get_devices():
+    # Fügen Sie hier Ihre Logik zum Scannen von Geräten im Hotspot-Modus ein
+    # Beispiel-Rückgabe:
+    return [{'ip': '192.168.33.1', 'name': 'shellypro4pm-8888', 'status': 'AP-Modus'}]
 
-# Überprüfen, ob die Umgebungsvariablen gesetzt sind
-if not WIFI_SSID or not WIFI_PASSWORD:
-    print("Fehler: Umgebungsvariablen 'WIFI_SSID' und 'WIFI_PASSWORD' sind nicht gesetzt.")
-    exit(1)
+def configure_device(ip, ssid, password):
+    # Fügen Sie hier Ihre Logik zur Konfiguration des Shelly-Geräts ein
+    # Beispiel:
+    try:
+        url = f"http://{ip}/rpc/Shelly.setconfig"
+        data = {
+            "wifi": {
+                "sta": {
+                    "enable": True,
+                    "ssid": ssid,
+                    "pass": password
+                }
+            }
+        }
+        response = requests.post(url, json=data, timeout=10)
+        response.raise_for_status()
+        return {'success': True, 'message': f'Gerät {ip} auf {ssid} konfiguriert'}
+    except requests.exceptions.RequestException as e:
+        return {'success': False, 'message': f'Fehler bei der Konfiguration von {ip}: {e}'}
 
-# Daten für die API-Anfrage
-payload = {
-    "sta_ssid": WIFI_SSID,
-    "sta_pass": WIFI_PASSWORD,
-    "sta_enable": True
-}
+# Route für die Hauptseite
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-try:
-    print(f"Versuche, Shelly mit dem WLAN {WIFI_SSID} zu verbinden...")
-    response = requests.post(SHELLY_CONFIG_URL, data=payload, timeout=10)
-    response.raise_for_status()
+# API-Endpunkt, um nach Shelly-Geräten zu suchen
+@app.route('/api/scan', methods=['GET'])
+def scan_devices():
+    devices = get_devices()
+    return jsonify(devices)
 
-    print("Erfolgreich! Die WLAN-Konfiguration wurde an den Shelly gesendet.")
-    print("Shelly startet neu...")
+# API-Endpunkt, um ein Gerät zu konfigurieren
+@app.route('/api/configure', methods=['POST'])
+def configure():
+    data = request.json
+    ip = data.get('ip')
+    ssid = data.get('ssid')
+    password = data.get('password')
 
-except requests.exceptions.RequestException as e:
-    print(f"Fehler bei der Anfrage an den Shelly: {e}")
-    print("Stellen Sie sicher, dass Ihr Home Assistant-Gerät mit dem Shelly AP verbunden ist.")
-    exit(1)
+    if not ip or not ssid or not password:
+        return jsonify({'success': False, 'message': 'Fehlende Daten'}), 400
 
-print("Skript beendet. Sie können das Add-on nun stoppen.")
+    result = configure_device(ip, ssid, password)
+    return jsonify(result)
+
+if __name__ == '__main__':
+    print("Startet den Shelly Konfigurator Webserver...")
+    app.run(host='0.0.0.0', port=8099)
