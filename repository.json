@@ -1,0 +1,11 @@
+{
+  "name": "Shelly WiFi Konfigurator",
+  "url": "https://github.com/0711smarthome/ShellyWIFIKonfigurator2",
+  "maintainer": "Ihr Name <Ihre-E-Mail>",
+  "addons": [
+    {
+      "slug": "shelly_wifikonfigurator",
+      "name": "Shelly WiFi Konfigurator"
+    }
+  ]
+}
