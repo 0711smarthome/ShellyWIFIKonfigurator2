@@ -18,5 +18,5 @@ COPY templates/ /data/templates/
 # Installiert Python-Abhängigkeiten
 RUN pip install --no-cache-dir Flask pydbus requests
 
-# Definiert den Startpunkt des Containers
-ENTRYPOINT [ "/data/run.sh" ]
+# Definiert das Standard-Kommando
+CMD [ "python3", "/data/shelly_configurator.py" ]
