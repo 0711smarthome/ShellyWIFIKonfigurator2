@@ -1,22 +1,18 @@
 FROM python:3.11-slim
 
+# Installiert Git, um das Repository zu klonen
+RUN apt-get update && apt-get install -y git
+
 WORKDIR /data
 
-# Erstellt die Startdatei direkt im Container
-RUN echo "#!/bin/bash" > /data/run.sh
-RUN echo "python3 /data/shelly_configurator.py" >> /data/run.sh
+# Klont das Repository und wechselt in den richtigen Ordner
+RUN git clone https://github.com/0711smarthome/ShellyWIFIKonfigurator2.git /data/shelly_wifikonfigurator
 
-# Macht die Startdatei ausführbar
-RUN chmod a+x /data/run.sh
+# Wechselt in den Projektordner
+WORKDIR /data/shelly_wifikonfigurator
 
-# Kopiert die Hauptanwendung
-COPY shelly_configurator.py /data/shelly_configurator.py
-
-# Kopiert den templates-Ordner
-COPY templates/ /data/templates/
-
-# Installiert Python-Abhängigkeiten
+# Installiert die Python-Abhängigkeiten
 RUN pip install --no-cache-dir Flask pydbus requests
 
-# Definiert das Standard-Kommando
-CMD [ "python3", "/data/shelly_configurator.py" ]
+# Definiert den Standard-Befehl für den Container
+CMD [ "python3", "shelly_configurator.py" ]
