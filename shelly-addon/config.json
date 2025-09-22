@@ -14,6 +14,7 @@
   "ingress": true,
   "panel_icon": "mdi:wifi",
   "panel_title": "Shelly Konfigurator",
+  "host_network": true,
   "homeassistant_api": true,
   "options": {
     "WIFI_SSID": "",
@@ -26,5 +27,6 @@
   "ports": {
     "8099/tcp": null
   },
+  "network_mode": "host",
   "image": "ghcr.io/0711smarthome/shelly-wifikonfigurator2"
 }
