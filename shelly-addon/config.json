@@ -16,6 +16,9 @@
   "panel_title": "Shelly Konfigurator",
   "host_network": true,
   "dbus": true,
+  "host_dbus": true,
+  "full_access": true,
+  "privileged": true,
   "homeassistant_api": true,
   "options": {
     "WIFI_SSID": "",
