@@ -36,7 +36,8 @@ def get_devices():
                 })
     except requests.exceptions.RequestException as e:
         print(f"Fehler beim Scannen nach Geräten: {e}")
-        return jsonify({'error': f'Fehler beim Scannen: {e}'}), 500
+        # Die Funktion sollte eine Ausnahme auslösen, nicht eine JSON-Antwort zurückgeben
+        raise e
     
     # Hier können Sie weitere IP-Adressen oder mDNS-Discovery hinzufügen
     # Die hier implementierte Logik ist grundlegend, kann aber erweitert werden.
