@@ -1,22 +1,53 @@
 import os
 import requests
 import json
+import ipaddress
+import socket
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from time import sleep
 
 app = Flask(__name__)
 
-# Diese Funktionen müssen Sie mit Ihrer Shelly-Logik füllen
+# Diese Funktion scannt nach Shelly-Geräten im Netzwerk
 def get_devices():
-    # Fügen Sie hier Ihre Logik zum Scannen von Geräten im Hotspot-Modus ein
-    # Beispiel-Rückgabe:
-    return [{'ip': '192.168.33.1', 'name': 'shellypro4pm-8888', 'status': 'AP-Modus'}]
+    """Scans the network for Shelly devices and returns a list."""
+    devices = []
+    # Annahme: Shelly-Geräte im AP-Modus verwenden die Standard-IP 192.168.33.1
+    # Oder Sie können einen IP-Bereich scannen, wenn das Add-on im Host-Netzwerk ist.
+    # Hier verwenden wir eine einfache Methode, die auf bekannte IP-Adressen abzielt.
+
+    print("Starte den Scan nach Shelly-Geräten...")
+    ip_to_check = '192.168.33.1'
+    
+    try:
+        # Versucht, auf das Shelly-Gerät über seine Standard-AP-IP-Adresse zuzugreifen
+        url = f"http://{ip_to_check}/shelly"
+        response = requests.get(url, timeout=2)
+        
+        if response.status_code == 200:
+            # Überprüfen, ob es sich um ein Shelly-Gerät handelt
+            info = response.json()
+            if 'model' in info and 'id' in info:
+                print(f"Gerät gefunden: {info['model']} mit ID {info['id']}")
+                devices.append({
+                    'ip': ip_to_check,
+                    'name': f"{info['model']}-{info['id']}",
+                    'status': 'AP-Modus'
+                })
+    except requests.exceptions.RequestException as e:
+        print(f"Fehler beim Scannen nach Geräten: {e}")
+        return jsonify({'error': f'Fehler beim Scannen: {e}'}), 500
+    
+    # Hier können Sie weitere IP-Adressen oder mDNS-Discovery hinzufügen
+    # Die hier implementierte Logik ist grundlegend, kann aber erweitert werden.
+    # Zum Beispiel: ipaddress.IPv4Network('192.168.178.0/24')
+    
+    return devices
 
 def configure_device(ip, ssid, password):
-    # Fügen Sie hier Ihre Logik zur Konfiguration des Shelly-Geräts ein
-    # Beispiel:
+    """Configures a Shelly device with the given Wi-Fi credentials."""
     try:
-        url = f"http://{ip}/rpc/Shelly.setconfig"
+        url = f"http://{ip}/rpc/Shelly.SetConfig"
         data = {
             "wifi": {
                 "sta": {
@@ -40,8 +71,12 @@ def index():
 # API-Endpunkt, um nach Shelly-Geräten zu suchen
 @app.route('/api/scan', methods=['GET'])
 def scan_devices():
-    devices = get_devices()
-    return jsonify(devices)
+    try:
+        devices = get_devices()
+        return jsonify(devices)
+    except Exception as e:
+        print(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
+        return jsonify({'error': 'Ein unerwarteter Fehler ist aufgetreten.'}), 500
 
 # API-Endpunkt, um ein Gerät zu konfigurieren
 @app.route('/api/configure', methods=['POST'])
