@@ -18,7 +18,6 @@
   "dbus": true,
   "host_dbus": true,
   "full_access": true,
-  "privileged": true,
   "homeassistant_api": true,
   "options": {
     "WIFI_SSID": "",
